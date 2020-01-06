@@ -2,6 +2,7 @@ Router - Basics
 hostname Router1
 banner motd % banner message %
 security passwords min-length 10
+username admin privilege 15 password pass
 enable password ciscopa12345
 enable secret cisco12345
 
