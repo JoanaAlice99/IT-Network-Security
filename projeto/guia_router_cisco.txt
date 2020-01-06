@@ -1,8 +1,9 @@
 Router - Basics
-R1(config)# hostname Router1
-R1(config)# banner motd %
-R1(config)# enable password ciscopa12345
-R1(config)# enable secret cisco12345
+hostname Router1
+banner motd % banner message %
+security passwords min-length 10
+enable password ciscopa12345
+enable secret cisco12345
 
 Router - CONFIGURAÇÃO DE ENDEREÇOS IP
 R1(config)#interface Ethernet 0
