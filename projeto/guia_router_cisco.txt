@@ -1,11 +1,32 @@
-Router - Basics
-hostname Router1
-banner motd % banner message %
+SAVE
+copy running-config startup-config
 security passwords min-length 10
-username admin privilege 15 password pass
+
+Router - Basics
+hostname R1
+ip domain name R1
+banner motd % *** Acesso sem autorizao  proibido e sero punidos nas formas da lei. *** %
+username admin privilege 15 password cisco12345
 enable password ciscopa12345
 enable secret cisco12345
+crypto key generate rsa
 
+ACCESS-LISTS
+//SSH_ACCESS
+ip access-list standard SSH_ACCESS
+	permit 192.14.1.2
+
+-------------------------------------------------------------------------------
+Router - Line vty
+line vty 0 15
+access-class SSH_ACCESS in
+password cisco12345
+login
+transport input ssh
+transport output ssh
+exit
+
+-------------------------------------------------------------------------------
 Router - CONFIGURAÇÃO DE ENDEREÇOS IP
 R1(config)#interface Ethernet 0
 R1(config-if)#ip address 10.10.10.1 255.255.255.0
@@ -13,15 +34,6 @@ R1(config-if)#no shutdown
 
 Router - Static Routing
 R1(config)#ip route "subnet_ip_to_learn" "subnet_ipmask_to_learn" "router_ip_of_subnet_ip_to_learn"
-
-Router - Line vty
-R1(config)#line vty 0 15
-R1(config)#line vty 0 15
-R1(config-line)# password cisco12345
-R1(config-line)# login
-R1(config-line)# transport input ssh
-R1(config-line)# transport output ssh
-R1(config-line)# exit
 
 11111111.11111111.11111111.11111100 /30
 			255.255.255.252
@@ -89,6 +101,3 @@ ip route 172.16.1.0 255.255.255.0 10.5.5.2
 ip route 192.14.1.0 255.255.255.0 10.5.5.2
 ip route 192.14.2.0 255.255.255.0 10.5.5.2
 ------------------------------------------
-
-SAVE
-copy running-config startup-config
