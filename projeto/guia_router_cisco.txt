@@ -15,7 +15,11 @@ ACCESS-LISTS
 //SSH_ACCESS
 ip access-list standard SSH_ACCESS
 	permit 192.14.1.2
-
+-------------------------------------------------------------------------------
+R3
+access-list 140 permit tcp 192.14.2.0 0.0.0.255 any eq 80
+access-list 140 permit tcp 192.14.2.0 0.0.0.255 any eq 443
+access-list 140 permit tcp 192.14.2.0 0.0.0.255 any eq 53
 -------------------------------------------------------------------------------
 Router - Line vty
 line vty 0 15
@@ -25,7 +29,121 @@ login
 transport input ssh
 transport output ssh
 exit
+-------------------------------------------------------------------------------
+IOS IPS R2
+clock set 10:20:00 10 january 2014
 
+mkdir ipsdir
+
+ip ips config location flash:ipsdir
+ip ips name iosips
+ip ips notify log
+service timestamps log datetime msec
+logging host 192.14.3.2
+
+ip ips signature-category
+category all
+retired true
+exit
+category ios_ips basic
+retired false
+exit
+
+interface FastEthernet 0/1
+ip ips iosips out
+
+-------------------------------------------------------------------------------
+Firewall R1
+
+zone security INSIDE
+zone security INTERNET
+zone security DMZ
+
+access-list 140 permit tcp 172.16.1.0 0.0.0.255 any eq 80
+access-list 140 permit tcp 172.16.1.0 0.0.0.255 any eq 443
+access-list 140 permit tcp 172.16.1.0 0.0.0.255 any eq 53
+access-list 140 permit udp 172.16.1.0 0.0.0.255 any 
+
+access-list 150 permit tcp 192.14.1.0 0.0.0.255 any 
+access-list 150 permit udp 192.14.1.0 0.0.0.255 any 
+access-list 150 permit icmp 192.14.1.0 0.0.0.255 any
+
+class-map type inspect match-all IN-NET-CLASS-MAP
+match access-group 150
+exit
+
+class-map type inspect match-all DMZ-NET-CLASS-MAP
+match access-group 140
+exit
+
+policy-map type inspect IN-2-OUT-PMAP
+class type inspect IN-NET-CLASS-MAP
+
+policy-map type inspect DMZ-2-OUT-PMAP
+class type inspect DMZ-NET-CLASS-MAP
+
+zone-pair security IN-2-OUT-ZPAIR source INSIDE destination INTERNET
+service-policy type inspect IN-2-OUT-PMAP
+exit
+
+zone-pair security DMZ-2-OUT-ZPAIR source DMZ destination INTERNET
+service-policy type inspect DMZ-2-OUT-PMAP
+exit
+
+interface FastEthernet 0/0
+zone-member security DMZ
+exit
+interface FastEthernet 0/1
+zone-member security INSIDE
+exit
+interface s0/0/0
+zone-member security INTERNET
+exit
+
+-------------------------------------------------------------------------------
+-----------R1----------------
+access-list 130 permit ip 192.14.3.0 0.0.0.255 192.14.4.0 0.0.0.255
+
+crypto isakmp policy 10
+encryption aes 256
+authentication pre-share
+group 5
+exit
+crypto isakmp key vpnpa55 address 10.5.5.1
+
+crypto ipsec transform-set VPN-SET esp-aes esp-sha-hmac
+
+crypto map VPN-MAP 10 ipsec-isakmp
+description VPN connection to R6
+set peer 10.5.5.1
+set transform-set VPN-SET
+match address 130
+exit
+
+interface s0/0/0
+crypto map VPN-MAP
+---------------------------------------------------
+---------------R6-------------------------
+access-list 130 permit ip 192.14.4.0 0.0.0.255 192.14.3.0 0.0.0.255
+
+crypto isakmp policy 10
+encryption aes 256
+authentication pre-share
+group 5
+exit
+crypto isakmp key vpnpa55 address 10.4.4.1
+
+crypto ipsec transform-set VPN-SET esp-aes esp-sha-hmac
+
+crypto map VPN-MAP 10 ipsec-isakmp
+description VPN connection to R4
+set peer 10.4.4.1
+set transform-set VPN-SET
+match address 130
+exit
+
+interface s0/0/1
+crypto map VPN-MAP
 -------------------------------------------------------------------------------
 Router - CONFIGURAÇÃO DE ENDEREÇOS IP
 R1(config)#interface Ethernet 0
